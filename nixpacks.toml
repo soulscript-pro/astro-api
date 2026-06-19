@@ -1,2 +1,2 @@
 [phases.setup]
-nixPkgs = ["sqlite"]
+nixPkgs = ["sqlite", "gcc", "stdenv.cc.cc.lib"]
