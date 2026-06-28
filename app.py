@@ -29,40 +29,43 @@ PLANETS = {
     "NorthNode": swe.MEAN_NODE,
 }
 
+# Future-proof:
+# Additional asteroid packs can be added by extending ASTEROID_PACKS only.
+# No changes to the endpoint logic are required.
 ASTEROID_PACKS = {
     "relationnel": [
-        {"key": "adonis", "name": "Adonis", "id": 2101},
+        {"key": "adonis",    "name": "Adonis",    "id": 2101},
         {"key": "aphrodite", "name": "Aphrodite", "id": 1388},
-        {"key": "eros", "name": "Éros", "id": 433},
-        {"key": "junon", "name": "Junon", "id": 3},
-        {"key": "psyche", "name": "Psyché", "id": 16},
+        {"key": "eros",      "name": "Éros",      "id": 433},
+        {"key": "junon",     "name": "Junon",     "id": 3},
+        {"key": "psyche",    "name": "Psyché",    "id": 16},
     ],
     "karma": [
-        {"key": "karma", "name": "Karma", "id": 3811},
-        {"key": "moira", "name": "Moira", "id": 638},
-        {"key": "klotho", "name": "Klotho", "id": 97},
+        {"key": "karma",    "name": "Karma",    "id": 3811},
+        {"key": "moira",    "name": "Moira",    "id": 638},
+        {"key": "klotho",   "name": "Klotho",   "id": 97},
         {"key": "lachesis", "name": "Lachesis", "id": 120},
-        {"key": "atropos", "name": "Atropos", "id": 273},
+        {"key": "atropos",  "name": "Atropos",  "id": 273},
     ],
     "ombre": [
-        {"key": "nessus", "name": "Nessus", "id": 7066},
+        {"key": "nessus",   "name": "Nessus",   "id": 7066},
         {"key": "dejanire", "name": "Déjanire", "id": 157},
-        {"key": "phedre", "name": "Phèdre", "id": 174},
-        {"key": "lust", "name": "Lust", "id": 4386},
+        {"key": "phedre",   "name": "Phèdre",   "id": 174},
+        {"key": "lust",     "name": "Lust",     "id": 4386},
     ],
     "mission": [
-        {"key": "vesta", "name": "Vesta", "id": 4},
-        {"key": "pallas", "name": "Pallas", "id": 2},
-        {"key": "fama", "name": "Fama", "id": 408},
-        {"key": "apollo", "name": "Apollo", "id": 1862},
+        {"key": "vesta",   "name": "Vesta",   "id": 4},
+        {"key": "pallas",  "name": "Pallas",  "id": 2},
+        {"key": "fama",    "name": "Fama",    "id": 408},
+        {"key": "apollo",  "name": "Apollo",  "id": 1862},
         {"key": "destinn", "name": "Destinn", "id": 6583},
     ],
     "sante": [
-        {"key": "hygie", "name": "Hygie", "id": 10},
-        {"key": "panacea", "name": "Panacea", "id": 2878},
-        {"key": "asclepius", "name": "Asclepius", "id": 4581},
+        {"key": "hygie",      "name": "Hygie",      "id": 10},
+        {"key": "panacea",    "name": "Panacea",    "id": 2878},
+        {"key": "asclepius",  "name": "Asclepius",  "id": 4581},
         {"key": "aesculapia", "name": "Aesculapia", "id": 1027},
-        {"key": "chariklo", "name": "Chariklo", "id": 10199},
+        {"key": "chariklo",   "name": "Chariklo",   "id": 10199},
     ],
 }
 
@@ -224,6 +227,7 @@ def asteroids():
                 }
 
             except Exception as exc:
+                print(f"[ASTEROID ERROR] {asteroid['name']} #{asteroid['id']}: {exc}")
                 pack_result[asteroid["key"]] = {
                     "id": asteroid["id"],
                     "name": asteroid["name"],
