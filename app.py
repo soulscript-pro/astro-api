@@ -32,6 +32,46 @@ PLANETS = {
     "NorthNode": swe.MEAN_NODE,
 }
 
+# Future-proof:
+# Additional asteroid packs can be added by extending ASTEROID_PACKS only.
+# No changes to the endpoint logic are required.
+ASTEROID_PACKS = {
+    "relationnel": [
+        {"key": "adonis",    "name": "Adonis",    "id": 2101},
+        {"key": "aphrodite", "name": "Aphrodite", "id": 1388},
+        {"key": "eros",      "name": "Éros",      "id": 433},
+        {"key": "junon",     "name": "Junon",     "id": 3},
+        {"key": "psyche",    "name": "Psyché",    "id": 16},
+    ],
+    "karma": [
+        {"key": "karma",    "name": "Karma",    "id": 3811},
+        {"key": "moira",    "name": "Moira",    "id": 638},
+        {"key": "klotho",   "name": "Klotho",   "id": 97},
+        {"key": "lachesis", "name": "Lachesis", "id": 120},
+        {"key": "atropos",  "name": "Atropos",  "id": 273},
+    ],
+    "ombre": [
+        {"key": "nessus",   "name": "Nessus",   "id": 7066},
+        {"key": "dejanire", "name": "Déjanire", "id": 157},
+        {"key": "phedre",   "name": "Phèdre",   "id": 174},
+        {"key": "lust",     "name": "Lust",     "id": 4386},
+    ],
+    "mission": [
+        {"key": "vesta",   "name": "Vesta",   "id": 4},
+        {"key": "pallas",  "name": "Pallas",  "id": 2},
+        {"key": "fama",    "name": "Fama",    "id": 408},
+        {"key": "apollo",  "name": "Apollo",  "id": 1862},
+        {"key": "destinn", "name": "Destinn", "id": 6583},
+    ],
+    "sante": [
+        {"key": "hygie",      "name": "Hygie",      "id": 10},
+        {"key": "panacea",    "name": "Panacea",    "id": 2878},
+        {"key": "asclepius",  "name": "Asclepius",  "id": 4581},
+        {"key": "aesculapia", "name": "Aesculapia", "id": 1027},
+        {"key": "chariklo",   "name": "Chariklo",   "id": 10199},
+    ],
+}
+
 
 def lon_to_dms(lon: float) -> dict:
     sign_idx = int(lon / 30) % 12
@@ -57,7 +97,6 @@ def calculate_natal_chart(year: int, month: int, day: int,
                            hour: int, minute: int,
                            lat: float, lon: float) -> dict:
     """Core natal chart calculation. All times are Universal Time (UTC)."""
-    # Set ephe path before every calculation so it's active in any thread/worker.
     swe.set_ephe_path(EPHE_PATH)
 
     jd = swe.julday(year, month, day, hour + minute / 60.0)
@@ -147,7 +186,7 @@ def parse_params(data: dict) -> tuple:
 
 def _keep_alive(port: int, interval: int = 240):
     """Ping /health every `interval` seconds so the service never idles out."""
-    time.sleep(30)  # wait for Flask to finish starting up
+    time.sleep(30)
     url = f"http://127.0.0.1:{port}/health"
     while True:
         try:
@@ -193,6 +232,61 @@ def natal_chart_post():
         body, status = err
         return jsonify(body), status
     return jsonify(calculate_natal_chart(*values))
+
+
+@app.route("/asteroids", methods=["POST"])
+def asteroids():
+    """POST /asteroids — JSON body: {packs: [...], year, month, day, hour, minute, lat, lon}"""
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    packs_requested = data.get("packs", [])
+    if not packs_requested:
+        return jsonify({"error": "Missing 'packs' field"}), 400
+
+    values, err = parse_params(data)
+    if err:
+        body, status = err
+        return jsonify(body), status
+
+    year, month, day, hour, minute, lat, lon = values
+
+    swe.set_ephe_path(EPHE_PATH)
+    jd = swe.julday(year, month, day, hour + minute / 60.0)
+    _, ascmc = swe.houses(jd, lat, lon, b"W")
+    asc_lon = ascmc[0]
+
+    result = {}
+    for pack_name in packs_requested:
+        pack_name_lower = pack_name.lower()
+        if pack_name_lower not in ASTEROID_PACKS:
+            result[pack_name] = {"error": f"Pack '{pack_name}' inconnu"}
+            continue
+        pack_result = {}
+        for asteroid in ASTEROID_PACKS[pack_name_lower]:
+            try:
+                pos, _ = swe.calc_ut(jd, swe.AST_OFFSET + asteroid["id"])
+                a_lon = pos[0]
+                info = lon_to_dms(a_lon)
+                pack_result[asteroid["key"]] = {
+                    "id":        asteroid["id"],
+                    "name":      asteroid["name"],
+                    "longitude": info["longitude"],
+                    "sign":      info["sign"],
+                    "degree":    info["degree"],
+                    "minute":    info["minute"],
+                    "house":     whole_sign_house(a_lon, asc_lon),
+                }
+            except Exception as exc:
+                pack_result[asteroid["key"]] = {
+                    "id":    asteroid["id"],
+                    "name":  asteroid["name"],
+                    "error": str(exc),
+                }
+        result[pack_name_lower] = pack_result
+
+    return jsonify(result)
 
 
 if __name__ == "__main__":
